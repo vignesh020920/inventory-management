@@ -40,7 +40,7 @@ interface DashboardState {
 
 export const useDashboardStore = create<DashboardState>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       // Initial state
       productStats: null,
       userStats: null,

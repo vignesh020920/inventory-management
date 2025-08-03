@@ -35,7 +35,6 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Mail,
   Shield,
@@ -51,7 +50,6 @@ import {
   EyeOff,
   Eye,
   User,
-  Settings,
   Activity,
 } from "lucide-react";
 import { useAdminAccountStore } from "@/stores/adminAccountStore";

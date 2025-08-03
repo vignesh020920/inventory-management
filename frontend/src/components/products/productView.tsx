@@ -7,7 +7,6 @@ import {
   Clock,
   Tag,
   Image as ImageIcon,
-  Hash,
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
