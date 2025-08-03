@@ -138,7 +138,6 @@ router.get("/:id", protect, getProductById);
 router.post(
   "/",
   protect,
-  authorize("admin"),
   productUpload.array("images", 10), // Use productUpload for multiple images
   validateProductWithFiles(createProductSchema),
   createProduct
@@ -147,12 +146,11 @@ router.post(
 router.put(
   "/:id",
   protect,
-  authorize("admin"),
   productUpload.array("images", 10), // Use productUpload for multiple images
   validateProductWithFiles(updateProductSchema),
   updateProduct
 );
 
-router.delete("/:id", protect, authorize("admin"), deleteProduct);
+router.delete("/:id", protect, deleteProduct);
 
 module.exports = router;
