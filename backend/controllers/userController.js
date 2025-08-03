@@ -25,15 +25,11 @@ const createUser = async (req, res) => {
       });
     }
 
-    // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // Create user object
+    // Create user object - Remove manual password hashing
     const userData = {
       name,
       email,
-      password: hashedPassword,
+      password, // Let the model handle password hashing via pre-save middleware
       role,
       status,
       isEmailVerified,
@@ -44,7 +40,7 @@ const createUser = async (req, res) => {
       userData.profile = profile;
     }
 
-    // Create user
+    // Create user - password will be hashed by pre-save middleware
     const user = await User.create(userData);
 
     // Remove password from response
@@ -123,7 +119,7 @@ const bulkCreateUsers = async (req, res) => {
       failed: [],
     };
 
-    const saltRounds = 12;
+    // Remove saltRounds variable as we're not manually hashing anymore
 
     for (let i = 0; i < users.length; i++) {
       const userData = users[i];
@@ -140,24 +136,18 @@ const bulkCreateUsers = async (req, res) => {
           continue;
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(
-          userData.password || "DefaultPassword123!",
-          saltRounds
-        );
-
-        // Create user data
+        // Create user data - Remove manual password hashing
         const newUserData = {
           name: userData.name,
           email: userData.email,
-          password: hashedPassword,
+          password: userData.password || "DefaultPassword123!", // Let model handle hashing
           role: userData.role || "user",
           status: userData.status || "active",
           isEmailVerified: userData.isEmailVerified || false,
           profile: userData.profile || {},
         };
 
-        // Create user
+        // Create user - password will be hashed by pre-save middleware
         const user = await User.create(newUserData);
         const userResponse = user.toObject();
         delete userResponse.password;
@@ -390,17 +380,65 @@ const getUserById = async (req, res) => {
 };
 
 // Update user profile
+// Update user profile - Enhanced to handle all profile fields
 const updateProfile = async (req, res) => {
   try {
     const allowedFields = ["name", "profile"];
     const updates = {};
 
-    // Only allow specific fields to be updated
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
+    // Handle name field
+    if (req.body.name !== undefined) {
+      updates.name = req.body.name;
+    }
+
+    // Handle profile field with nested updates
+    if (req.body.profile !== undefined) {
+      const currentUser = await User.findById(req.user.id).select("profile");
+      if (!currentUser) {
+        return res.status(httpStatus.NOT_FOUND).json({
+          success: false,
+          message: "User not found",
+        });
       }
-    });
+
+      // Merge existing profile with new profile data
+      const existingProfile = currentUser.profile || {};
+      const newProfile = { ...existingProfile };
+
+      // Update profile fields
+      if (req.body.profile.bio !== undefined) {
+        newProfile.bio = req.body.profile.bio;
+      }
+      if (req.body.profile.phone !== undefined) {
+        newProfile.phone = req.body.profile.phone;
+      }
+
+      // Handle nested address object
+      if (req.body.profile.address !== undefined) {
+        const existingAddress = existingProfile.address || {};
+        newProfile.address = {
+          ...existingAddress,
+          ...req.body.profile.address,
+        };
+
+        // Clean up empty address fields
+        Object.keys(newProfile.address).forEach((key) => {
+          if (
+            newProfile.address[key] === "" ||
+            newProfile.address[key] === null
+          ) {
+            delete newProfile.address[key];
+          }
+        });
+
+        // If address object is empty, remove it
+        if (Object.keys(newProfile.address).length === 0) {
+          delete newProfile.address;
+        }
+      }
+
+      updates.profile = newProfile;
+    }
 
     const user = await User.findByIdAndUpdate(req.user.id, updates, {
       new: true,
@@ -413,33 +451,123 @@ const updateProfile = async (req, res) => {
       data: { user },
     });
   } catch (error) {
+    console.error("Update profile error:", error);
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => err.message);
+      return res.status(httpStatus.BAD_REQUEST).json({
+        success: false,
+        message: "Validation error",
+        errors,
+      });
+    }
+
     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Failed to update profile",
-      error: error.message,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
 
 // Update user (Admin only)
+// Update user (Admin only) - Enhanced version with nested profile handling
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const allowedFields = [
+    const updates = {};
+
+    // Handle basic fields
+    const allowedBasicFields = [
       "name",
       "email",
       "role",
       "status",
       "isEmailVerified",
     ];
-    const updates = {};
 
-    // Only allow specific fields to be updated
-    allowedFields.forEach((field) => {
+    allowedBasicFields.forEach((field) => {
       if (req.body[field] !== undefined) {
         updates[field] = req.body[field];
       }
     });
+
+    // Handle profile fields with nested updates
+    if (req.body.profile !== undefined) {
+      const currentUser = await User.findById(id).select("profile");
+      if (!currentUser) {
+        return res.status(httpStatus.NOT_FOUND).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Merge existing profile with new profile data
+      const existingProfile = currentUser.profile || {};
+      const newProfile = { ...existingProfile };
+
+      // Update profile fields
+      if (req.body.profile.bio !== undefined) {
+        newProfile.bio = req.body.profile.bio;
+      }
+      if (req.body.profile.phone !== undefined) {
+        newProfile.phone = req.body.profile.phone;
+      }
+      if (req.body.profile.dateOfBirth !== undefined) {
+        newProfile.dateOfBirth = req.body.profile.dateOfBirth;
+      }
+
+      // Handle nested address object
+      if (req.body.profile.address !== undefined) {
+        const existingAddress = existingProfile.address || {};
+        newProfile.address = {
+          ...existingAddress,
+          ...req.body.profile.address,
+        };
+
+        // Clean up empty address fields
+        Object.keys(newProfile.address).forEach((key) => {
+          if (
+            newProfile.address[key] === "" ||
+            newProfile.address[key] === null
+          ) {
+            delete newProfile.address[key];
+          }
+        });
+
+        // If address object is empty, remove it
+        if (Object.keys(newProfile.address).length === 0) {
+          delete newProfile.address;
+        }
+      }
+
+      // Handle nested socialLinks object
+      if (req.body.profile.socialLinks !== undefined) {
+        const existingSocialLinks = existingProfile.socialLinks || {};
+        newProfile.socialLinks = {
+          ...existingSocialLinks,
+          ...req.body.profile.socialLinks,
+        };
+
+        // Clean up empty social link fields
+        Object.keys(newProfile.socialLinks).forEach((key) => {
+          if (
+            newProfile.socialLinks[key] === "" ||
+            newProfile.socialLinks[key] === null
+          ) {
+            delete newProfile.socialLinks[key];
+          }
+        });
+
+        // If socialLinks object is empty, remove it
+        if (Object.keys(newProfile.socialLinks).length === 0) {
+          delete newProfile.socialLinks;
+        }
+      }
+
+      updates.profile = newProfile;
+    }
 
     const user = await User.findByIdAndUpdate(id, updates, {
       new: true,
@@ -453,16 +581,42 @@ const updateUser = async (req, res) => {
       });
     }
 
+    // Log the update
+    console.log(`User updated: ${user.email} by admin ${req.user.email}`, {
+      updatedFields: Object.keys(updates),
+      profileUpdated: !!updates.profile,
+    });
+
     res.status(httpStatus.OK).json({
       success: true,
       message: "User updated successfully",
       data: { user },
     });
   } catch (error) {
+    console.error("Update user error:", error);
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => err.message);
+      return res.status(httpStatus.BAD_REQUEST).json({
+        success: false,
+        message: "Validation error",
+        errors,
+      });
+    }
+
+    // Handle cast errors (invalid ObjectId)
+    if (error.name === "CastError") {
+      return res.status(httpStatus.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    }
+
     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Failed to update user",
-      error: error.message,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
