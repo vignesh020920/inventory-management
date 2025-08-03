@@ -1,14 +1,22 @@
-// src/services/userService.ts
 import apiClient from "./axiosInstance";
 import {
-  type BulkDeleteData,
-  type StatusUpdateData,
+  type CreateUserData,
   type UpdateUserData,
-  type UpdateUserResponse,
-  type UserQueryParams,
   type UserResponse,
   type UsersResponse,
+  type DeleteUserResponse,
+  type BulkDeleteUsersResponse,
 } from "@/types/user";
+
+interface UserQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
 
 class UserService {
   private readonly baseUrl = "/users";
@@ -33,51 +41,33 @@ class UserService {
     return await apiClient.get<UserResponse>(`${this.baseUrl}/${id}`);
   }
 
-  async deleteUser(id: string): Promise<{ success: boolean; message: string }> {
-    return await apiClient.delete(`${this.baseUrl}/${id}`);
+  async createUser(data: CreateUserData): Promise<UserResponse> {
+    return await apiClient.post<UserResponse>(this.baseUrl, data);
+  }
+
+  async updateUser(id: string, data: UpdateUserData): Promise<UserResponse> {
+    return await apiClient.put<UserResponse>(`${this.baseUrl}/${id}`, data);
+  }
+
+  async deleteUser(id: string): Promise<DeleteUserResponse> {
+    return await apiClient.delete<DeleteUserResponse>(`${this.baseUrl}/${id}`);
+  }
+
+  async bulkDeleteUsers(userIds: string[]): Promise<BulkDeleteUsersResponse> {
+    return await apiClient.delete<BulkDeleteUsersResponse>(
+      `${this.baseUrl}/bulk`,
+      {
+        data: { userIds },
+      }
+    );
   }
 
   async updateUserStatus(
     id: string,
-    data: StatusUpdateData
+    status: "active" | "inactive" | "suspended"
   ): Promise<UserResponse> {
-    return await apiClient.patch<UserResponse>(
-      `${this.baseUrl}/${id}/status`,
-      data
-    );
-  }
-
-  async bulkDeleteUsers(
-    data: BulkDeleteData
-  ): Promise<{ success: boolean; message: string; deletedCount: number }> {
-    return await apiClient.delete(`${this.baseUrl}/bulk`, { data });
-  }
-
-  async updateUser(
-    id: string,
-    data: UpdateUserData
-  ): Promise<UpdateUserResponse> {
-    return await apiClient.put<UpdateUserResponse>(
-      `${this.baseUrl}/${id}`,
-      data
-    );
-  }
-
-  async exportUsers(params: UserQueryParams = {}): Promise<Blob> {
-    const queryString = new URLSearchParams();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        queryString.append(key, value.toString());
-      }
-    });
-
-    const url = queryString.toString()
-      ? `${this.baseUrl}/export?${queryString.toString()}`
-      : `${this.baseUrl}/export`;
-
-    return await apiClient.get<Blob>(url, {
-      responseType: "blob",
+    return await apiClient.patch<UserResponse>(`${this.baseUrl}/${id}/status`, {
+      status,
     });
   }
 }

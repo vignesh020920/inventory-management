@@ -6,10 +6,10 @@ import {
   type AdminProfileResponse,
   type ChangePasswordResponse,
   type UploadAvatarResponse,
-} from "@/types/admin";
+} from "@/types/account";
 
 class AdminAccountService {
-  private readonly baseUrl = "/admin/account";
+  private readonly baseUrl = "/account";
 
   // Get current admin profile
   async getCurrentProfile(): Promise<AdminProfileResponse> {

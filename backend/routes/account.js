@@ -14,11 +14,10 @@ const {
   changePassword,
   uploadAvatar,
   removeAvatar,
-} = require("../controllers/adminAccountController");
+} = require("../controllers/accountController");
 
 //   // Apply middleware
 router.use(protect);
-router.use(adminOnly);
 
 // Define routes
 router.get("/profile", getCurrentProfile);

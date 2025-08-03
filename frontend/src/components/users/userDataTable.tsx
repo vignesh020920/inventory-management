@@ -27,6 +27,9 @@ import {
   Check,
   AlertTriangle,
   Calendar,
+  Plus, // Add this import
+  UserPlus, // Add this import
+  Edit, // Add this import
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -247,6 +250,7 @@ const UserCard = ({
   isSelected,
   onSelect,
   onView,
+  onEdit,
   onDelete,
   onStatusUpdate,
 }: {
@@ -254,6 +258,7 @@ const UserCard = ({
   isSelected: boolean;
   onSelect: (checked: boolean) => void;
   onView: () => void;
+  onEdit: () => void; // Add edit handler
   onDelete: () => void;
   onStatusUpdate: (
     id: string,
@@ -345,6 +350,13 @@ const UserCard = ({
                   >
                     <Eye className="mr-2 h-4 w-4 text-blue-500" />
                     View Details
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={onEdit}
+                    className="hover:bg-green-50"
+                  >
+                    <Edit className="mr-2 h-4 w-4 text-green-500" />
+                    Edit User
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -455,6 +467,7 @@ export default function UserDataTable() {
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("view");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // Delete confirmation states
@@ -517,9 +530,28 @@ export default function UserDataTable() {
   };
 
   // Modal handlers
+  const handleCreateUser = () => {
+    setSelectedUser(null);
+    setModalMode("create");
+    setModalOpen(true);
+  };
+
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
+    setModalMode("view");
     setModalOpen(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setModalMode("edit");
+    setModalOpen(true);
+  };
+
+  const handleModalSuccess = () => {
+    setModalOpen(false);
+    setSelectedUser(null);
+    fetchUsers(); // Refresh the user list
   };
 
   // Delete handlers
@@ -873,6 +905,13 @@ export default function UserDataTable() {
                   <Eye className="mr-2 h-4 w-4 text-blue-500" />
                   View Details
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleEditUser(user)}
+                  className="hover:bg-green-50"
+                >
+                  <Edit className="mr-2 h-4 w-4 text-green-500" />
+                  Edit User
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => handleDeleteUser(user)}
@@ -999,32 +1038,45 @@ export default function UserDataTable() {
               </p>
             </div>
 
-            {/* View Mode Toggle - Desktop only with proper dark mode support */}
-            <div className="hidden lg:flex items-center border border-white/30 dark:border-gray-600/50 rounded-md bg-white/10 dark:bg-gray-800/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              {/* Add User Button */}
               <Button
-                variant={viewMode === "table" ? "secondary" : "ghost"}
+                onClick={handleCreateUser}
+                className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm transition-all duration-200 shadow-lg hover:shadow-xl"
                 size="sm"
-                onClick={() => setViewMode("table")}
-                className={`rounded-r-none border-0 transition-all duration-200 ${
-                  viewMode === "table"
-                    ? "bg-white/20 dark:bg-gray-700/80 text-white dark:text-gray-100 shadow-md"
-                    : "text-white/80 dark:text-gray-300 hover:bg-white/15 dark:hover:bg-gray-700/50 hover:text-white dark:hover:text-gray-100"
-                }`}
               >
-                <List className="h-4 w-4" />
+                <UserPlus className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Add User</span>
+                <span className="sm:hidden">Add</span>
               </Button>
-              <Button
-                variant={viewMode === "cards" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("cards")}
-                className={`rounded-l-none border-0 transition-all duration-200 ${
-                  viewMode === "cards"
-                    ? "bg-white/20 dark:bg-gray-700/80 text-white dark:text-gray-100 shadow-md"
-                    : "text-white/80 dark:text-gray-300 hover:bg-white/15 dark:hover:bg-gray-700/50 hover:text-white dark:hover:text-gray-100"
-                }`}
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
+
+              {/* View Mode Toggle - Desktop only with proper dark mode support */}
+              <div className="hidden lg:flex items-center border border-white/30 dark:border-gray-600/50 rounded-md bg-white/10 dark:bg-gray-800/50 backdrop-blur-sm">
+                <Button
+                  variant={viewMode === "table" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("table")}
+                  className={`rounded-r-none border-0 transition-all duration-200 ${
+                    viewMode === "table"
+                      ? "bg-white/20 dark:bg-gray-700/80 text-white dark:text-gray-100 shadow-md"
+                      : "text-white/80 dark:text-gray-300 hover:bg-white/15 dark:hover:bg-gray-700/50 hover:text-white dark:hover:text-gray-100"
+                  }`}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "cards" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("cards")}
+                  className={`rounded-l-none border-0 transition-all duration-200 ${
+                    viewMode === "cards"
+                      ? "bg-white/20 dark:bg-gray-700/80 text-white dark:text-gray-100 shadow-md"
+                      : "text-white/80 dark:text-gray-300 hover:bg-white/15 dark:hover:bg-gray-700/50 hover:text-white dark:hover:text-gray-100"
+                  }`}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -1077,6 +1129,16 @@ export default function UserDataTable() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                {/* Mobile Add User Button */}
+                <Button
+                  onClick={handleCreateUser}
+                  className="lg:hidden bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add User
+                </Button>
+
                 {/* Mobile Filters */}
                 <MobileFiltersSheet>
                   <FilterControls />
@@ -1229,6 +1291,15 @@ export default function UserDataTable() {
                             <div className="text-muted-foreground">
                               No users found.
                             </div>
+                            <Button
+                              onClick={handleCreateUser}
+                              variant="outline"
+                              size="sm"
+                              className="mt-2"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add First User
+                            </Button>
                           </div>
                         )}
                       </TableCell>
@@ -1287,11 +1358,18 @@ export default function UserDataTable() {
                     <h3 className="text-lg font-semibold text-gray-800">
                       No users found
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-muted-foreground text-sm mb-4">
                       {filters.search || filters.role || filters.status
                         ? "Try adjusting your filters or search criteria"
                         : "No users have been created yet"}
                     </p>
+                    <Button
+                      onClick={handleCreateUser}
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create First User
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -1305,6 +1383,7 @@ export default function UserDataTable() {
                   isSelected={!!rowSelection[user._id]}
                   onSelect={(checked) => handleCardSelect(user, checked)}
                   onView={() => handleViewUser(user)}
+                  onEdit={() => handleEditUser(user)}
                   onDelete={() => handleDeleteUser(user)}
                   onStatusUpdate={handleStatusUpdate}
                 />
@@ -1404,7 +1483,10 @@ export default function UserDataTable() {
       <UserModal
         open={modalOpen}
         onOpenChange={setModalOpen}
+        mode={modalMode}
         user={selectedUser}
+        onSuccess={handleModalSuccess}
+        handleEditUser={handleEditUser}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

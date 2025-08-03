@@ -1,9 +1,10 @@
-// src/stores/userStore.ts
 import { create } from "zustand";
-import userService from "@/services/userService";
-import { type UpdateUserData, type User, type UserFilters } from "@/types/user";
+import { devtools } from "zustand/middleware";
+import userService from "../services/userService";
+import type { CreateUserData, UpdateUserData, User } from "@/types/user";
 
 interface UserState {
+  // State
   users: User[];
   pagination: {
     currentPage: number;
@@ -12,188 +13,262 @@ interface UserState {
     hasNextPage: boolean;
     hasPrevPage: boolean;
   } | null;
+  selectedUser: User | null;
   loading: boolean;
   error: string | null;
-  filters: UserFilters;
-}
 
-interface UserActions {
-  fetchUsers: () => Promise<void>;
-  getUserById: (id: string) => Promise<User | null>;
+  // Filters
+  filters: {
+    page: number;
+    limit: number;
+    search: string;
+    role: string;
+    status: string;
+    sortBy: string;
+    sortOrder: "asc" | "desc";
+  };
+
+  // Actions
+  fetchUsers: (params?: any) => Promise<void>;
+  fetchUser: (id: string) => Promise<void>;
+  createUser: (data: CreateUserData) => Promise<User>;
+  updateUser: (id: string, data: UpdateUserData) => Promise<User>;
+  deleteUser: (id: string) => Promise<void>;
+  bulkDeleteUsers: (userIds: string[]) => Promise<void>;
   updateUserStatus: (
-    userId: string,
+    id: string,
     status: "active" | "inactive" | "suspended"
   ) => Promise<void>;
-  deleteUser: (userId: string) => Promise<void>;
-  bulkDeleteUsers: (userIds: string[]) => Promise<void>;
-  setFilters: (newFilters: Partial<UserFilters>) => void;
+  setFilters: (filters: Partial<UserState["filters"]>) => void;
   clearError: () => void;
-  exportUsers: () => Promise<void>;
-  updateUser: (userId: string, data: UpdateUserData) => Promise<User>;
+  setSelectedUser: (user: User | null) => void;
+  resetState: () => void;
 }
 
-const defaultFilters: UserFilters = {
-  page: 1,
-  limit: 10,
-  search: "",
-  role: "",
-  status: "",
-  sortBy: "createdAt",
-  sortOrder: "desc",
-};
+export const useUserStore = create<UserState>()(
+  devtools(
+    (set, get) => ({
+      // Initial state
+      users: [],
+      pagination: null,
+      selectedUser: null,
+      loading: false,
+      error: null,
+      filters: {
+        page: 1,
+        limit: 10,
+        search: "",
+        role: "",
+        status: "",
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      },
 
-export const useUserStore = create<UserState & UserActions>((set, get) => ({
-  users: [],
-  pagination: null,
-  loading: false,
-  error: null,
-  filters: defaultFilters,
+      // Fetch all users with filters
+      fetchUsers: async (customParams = {}) => {
+        set({ loading: true, error: null });
+        try {
+          const { filters } = get();
+          const params = { ...filters, ...customParams };
 
-  fetchUsers: async () => {
-    set({ loading: true, error: null });
-    try {
-      const response = await userService.getUsers(get().filters);
-      set({
-        users: response.data.users,
-        pagination: response.data.pagination,
-        loading: false,
-      });
-    } catch (error: any) {
-      set({
-        error: error.response?.data?.message || "Failed to fetch users",
-        loading: false,
-      });
+          const response = await userService.getUsers(params);
+          set({
+            users: response.data.users,
+            pagination: response.data.pagination,
+            loading: false,
+          });
+        } catch (error: any) {
+          set({
+            error:
+              error.response?.data?.message ||
+              error.message ||
+              "Failed to fetch users",
+            loading: false,
+          });
+        }
+      },
+
+      // Fetch single user
+      fetchUser: async (id: string) => {
+        set({ loading: true, error: null });
+        try {
+          const response = await userService.getUserById(id);
+          set({ selectedUser: response.data.user, loading: false });
+        } catch (error: any) {
+          set({
+            error:
+              error.response?.data?.message ||
+              error.message ||
+              "Failed to fetch user",
+            loading: false,
+          });
+        }
+      },
+
+      // Create user
+      createUser: async (data: CreateUserData): Promise<User> => {
+        set({ loading: true, error: null });
+        try {
+          const response = await userService.createUser(data);
+          const newUser = response.data.user;
+
+          set((state) => ({
+            users: [newUser, ...state.users],
+            loading: false,
+          }));
+
+          return newUser;
+        } catch (error: any) {
+          const errorMessage =
+            error.response?.data?.message ||
+            error.message ||
+            "Failed to create user";
+          set({
+            error: errorMessage,
+            loading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Update user
+      updateUser: async (id: string, data: UpdateUserData): Promise<User> => {
+        set({ loading: true, error: null });
+        try {
+          const response = await userService.updateUser(id, data);
+
+          set((state) => ({
+            users: state.users.map((u) =>
+              u._id === id ? { ...u, ...data } : u
+            ),
+            selectedUser:
+              state.selectedUser?._id === id
+                ? { ...state.selectedUser, ...data }
+                : state.selectedUser,
+            loading: false,
+          }));
+
+          return response.data.user;
+        } catch (error: any) {
+          const errorMessage =
+            error.response?.data?.message ||
+            error.message ||
+            "Failed to update user";
+          set({
+            error: errorMessage,
+            loading: false,
+          });
+          throw error;
+        }
+      },
+
+      // Delete user
+      deleteUser: async (id: string) => {
+        set({ loading: true, error: null });
+        try {
+          await userService.deleteUser(id);
+
+          set((state) => ({
+            users: state.users.filter((u) => u._id !== id),
+            selectedUser:
+              state.selectedUser?._id === id ? null : state.selectedUser,
+            loading: false,
+          }));
+        } catch (error: any) {
+          set({
+            error:
+              error.response?.data?.message ||
+              error.message ||
+              "Failed to delete user",
+            loading: false,
+          });
+        }
+      },
+
+      // Bulk delete users
+      bulkDeleteUsers: async (userIds: string[]) => {
+        set({ loading: true, error: null });
+        try {
+          await userService.bulkDeleteUsers(userIds);
+
+          set((state) => ({
+            users: state.users.filter((u) => !userIds.includes(u._id)),
+            loading: false,
+          }));
+        } catch (error: any) {
+          set({
+            error:
+              error.response?.data?.message ||
+              error.message ||
+              "Failed to delete users",
+            loading: false,
+          });
+        }
+      },
+
+      // Update user status
+      updateUserStatus: async (
+        id: string,
+        status: "active" | "inactive" | "suspended"
+      ) => {
+        set({ loading: true, error: null });
+        try {
+          await userService.updateUserStatus(id, status);
+
+          set((state) => ({
+            users: state.users.map((u) =>
+              u._id === id ? { ...u, status } : u
+            ),
+            selectedUser:
+              state.selectedUser?._id === id
+                ? { ...state.selectedUser, status }
+                : state.selectedUser,
+            loading: false,
+          }));
+        } catch (error: any) {
+          set({
+            error:
+              error.response?.data?.message ||
+              error.message ||
+              "Failed to update user status",
+            loading: false,
+          });
+        }
+      },
+
+      // Set filters
+      setFilters: (newFilters) => {
+        set((state) => ({
+          filters: { ...state.filters, ...newFilters },
+        }));
+
+        // Auto-fetch with new filters
+        get().fetchUsers();
+      },
+
+      // Utility actions
+      clearError: () => set({ error: null }),
+      setSelectedUser: (user) => set({ selectedUser: user }),
+      resetState: () =>
+        set({
+          users: [],
+          pagination: null,
+          selectedUser: null,
+          loading: false,
+          error: null,
+          filters: {
+            page: 1,
+            limit: 10,
+            search: "",
+            role: "",
+            status: "",
+            sortBy: "createdAt",
+            sortOrder: "desc",
+          },
+        }),
+    }),
+    {
+      name: "user-store",
     }
-  },
-
-  getUserById: async (id: string) => {
-    try {
-      const response = await userService.getUserById(id);
-      return response.data;
-    } catch (error: any) {
-      set({
-        error: error.response?.data?.message || "Failed to fetch user",
-      });
-      return null;
-    }
-  },
-
-  updateUserStatus: async (
-    userId: string,
-    status: "active" | "inactive" | "suspended"
-  ) => {
-    try {
-      await userService.updateUserStatus(userId, { status });
-
-      // Update local state
-      set((state) => ({
-        users: state.users.map((user) =>
-          user._id === userId ? { ...user, status } : user
-        ),
-      }));
-
-      // Refresh data to ensure consistency
-      await get().fetchUsers();
-    } catch (error: any) {
-      set({
-        error: error?.message || "Failed to update user status",
-      });
-      throw error;
-    }
-  },
-
-  updateUser: async (userId: string, data: UpdateUserData): Promise<User> => {
-    try {
-      const response = await userService.updateUser(userId, data);
-      const updatedUser = response.data.user;
-
-      // Update local state
-      set((state) => ({
-        users: state.users.map((user) =>
-          user._id === userId ? updatedUser : user
-        ),
-      }));
-
-      // Refresh data to ensure consistency
-      await get().fetchUsers();
-
-      return updatedUser;
-    } catch (error: any) {
-      set({
-        error: error.response?.data?.message || "Failed to update user",
-      });
-      throw error;
-    }
-  },
-
-  deleteUser: async (userId: string) => {
-    try {
-      await userService.deleteUser(userId);
-
-      // Remove from local state
-      set((state) => ({
-        users: state.users.filter((user) => user._id !== userId),
-      }));
-
-      // Refresh data to update pagination
-      await get().fetchUsers();
-    } catch (error: any) {
-      set({
-        error: error.response?.data?.message || "Failed to delete user",
-      });
-      throw error;
-    }
-  },
-
-  bulkDeleteUsers: async (userIds: string[]) => {
-    try {
-      await userService.bulkDeleteUsers({ userIds });
-
-      // Remove from local state
-      set((state) => ({
-        users: state.users.filter((user) => !userIds.includes(user._id)),
-      }));
-
-      // Refresh data to update pagination
-      await get().fetchUsers();
-    } catch (error: any) {
-      set({
-        error: error.response?.data?.message || "Failed to delete users",
-      });
-      throw error;
-    }
-  },
-
-  setFilters: (newFilters: Partial<UserFilters>) => {
-    set((state) => ({
-      filters: { ...state.filters, ...newFilters },
-    }));
-  },
-
-  clearError: () => {
-    set({ error: null });
-  },
-
-  exportUsers: async () => {
-    try {
-      const blob = await userService.exportUsers(get().filters);
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `users-export-${
-        new Date().toISOString().split("T")[0]
-      }.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error: any) {
-      set({
-        error: error.response?.data?.message || "Failed to export users",
-      });
-      throw error;
-    }
-  },
-}));
+  )
+);

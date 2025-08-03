@@ -13,7 +13,7 @@ const UsersPage = lazy(() => import("../pages/users/page"));
 const AccountsPage = lazy(() => import("../pages/AccountSettings/page"));
 
 // Type definitions
-export type AccessRole = "admin";
+export type AccessRole = "admin" | "user";
 
 export interface RouteConfig {
   path: string;
@@ -38,7 +38,7 @@ const pagesData: RouteConfig[] = [
   {
     path: "/",
     element: withErrorBoundary(<DashboardLayout />),
-    access: ["admin"],
+    access: ["admin", "user"],
     meta: {
       title: "Dashboard",
       description: "Main dashboard layout",
@@ -48,7 +48,7 @@ const pagesData: RouteConfig[] = [
       {
         path: "dashboard",
         element: withErrorBoundary(<OverviewPage />),
-        access: ["admin"],
+        access: ["admin", "user"],
         meta: {
           title: "Dashboard overview",
           description: "Dashboard overview",
@@ -67,7 +67,7 @@ const pagesData: RouteConfig[] = [
       {
         path: "products",
         element: withErrorBoundary(<ProductsPage />),
-        access: ["admin"],
+        access: ["admin", "user"],
         meta: {
           title: "Products",
           description: "Product management",
@@ -87,7 +87,7 @@ const pagesData: RouteConfig[] = [
       {
         path: "account",
         element: withErrorBoundary(<AccountsPage />),
-        access: ["admin"],
+        access: ["admin", "user"],
         meta: {
           title: "Account",
           description: "Account settings",

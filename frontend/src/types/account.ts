@@ -1,5 +1,5 @@
-// src/types/admin.ts
-export interface Admin {
+// src/types/account.ts
+export interface Account {
   _id: string;
   name: string;
   email: string;
@@ -50,7 +50,7 @@ export interface AdminProfileResponse {
   success: boolean;
   message: string;
   data: {
-    user: Admin;
+    user: Account;
   };
 }
 

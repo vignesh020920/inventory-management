@@ -1,16 +1,16 @@
 // src/stores/adminAccountStore.ts
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import adminAccountService from "@/services/adminAccountService";
+import adminAccountService from "@/services/accountService";
 import { useAuthStore } from "./authStore"; // ADD THIS IMPORT
 import {
-  type Admin,
+  type Account,
   type UpdateAdminProfileData,
   type ChangeAdminPasswordData,
-} from "@/types/admin";
+} from "@/types/account";
 
-interface AdminAccountState {
-  currentAdmin: Admin | null;
+interface accountState {
+  currentAdmin: Account | null;
   loading: boolean;
   error: string | null;
   isUpdatingProfile: boolean;
@@ -18,20 +18,18 @@ interface AdminAccountState {
   isUploadingAvatar: boolean;
 }
 
-interface AdminAccountActions {
+interface accountActions {
   fetchCurrentProfile: () => Promise<void>;
-  updateProfile: (data: UpdateAdminProfileData) => Promise<Admin>;
+  updateProfile: (data: UpdateAdminProfileData) => Promise<Account>;
   changePassword: (data: ChangeAdminPasswordData) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
   removeAvatar: () => Promise<void>;
   clearError: () => void;
   resetState: () => void;
-  setCurrentAdmin: (admin: Admin | null) => void;
+  setCurrentAdmin: (account: Account | null) => void;
 }
 
-export const useAdminAccountStore = create<
-  AdminAccountState & AdminAccountActions
->()(
+export const useAdminAccountStore = create<accountState & accountActions>()(
   devtools(
     (set) => ({
       currentAdmin: null,
@@ -63,7 +61,7 @@ export const useAdminAccountStore = create<
         }
       },
 
-      updateProfile: async (data: UpdateAdminProfileData): Promise<Admin> => {
+      updateProfile: async (data: UpdateAdminProfileData): Promise<Account> => {
         set({ isUpdatingProfile: true, error: null });
         try {
           const response = await adminAccountService.updateProfile(data);
@@ -173,7 +171,8 @@ export const useAdminAccountStore = create<
           isUploadingAvatar: false,
         }),
 
-      setCurrentAdmin: (admin: Admin | null) => set({ currentAdmin: admin }),
+      setCurrentAdmin: (account: Account | null) =>
+        set({ currentAdmin: account }),
     }),
     {
       name: "admin-account-store",

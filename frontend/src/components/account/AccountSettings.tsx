@@ -52,7 +52,7 @@ import {
   User,
   Activity,
 } from "lucide-react";
-import { useAdminAccountStore } from "@/stores/adminAccountStore";
+import { useAdminAccountStore } from "@/stores/accountStore";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -382,7 +382,7 @@ export default function AdminAccountSettings() {
                 <div className="flex flex-col sm:flex-row items-center gap-2 justify-center sm:justify-start">
                   <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-md text-xs sm:text-sm">
                     <Shield className="h-3 w-3 mr-1" />
-                    Administrator
+                    {currentAdmin?.role == "admin" ? "Administrator" : "User"}
                   </Badge>
                   <Badge
                     className={`text-xs sm:text-sm border-0 shadow-md ${

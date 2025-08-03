@@ -36,7 +36,7 @@ const safeRequire = (routePath) => {
 const routeModules = {
   auth: safeRequire("./auth"),
   users: safeRequire("./user"),
-  adminAccount: safeRequire("./adminAccount"),
+  account: safeRequire("./account"),
   upload: safeRequire("./upload"),
   categories: safeRequire("./category"),
   products: safeRequire("./product"),
@@ -62,9 +62,9 @@ const routeConfig = {
     protected: true,
   },
   adminAccount: {
-    path: "/admin/account",
-    route: validRoutes.adminAccount,
-    description: "Admin account settings and management endpoints",
+    path: "/account",
+    route: validRoutes.account,
+    description: "Account settings and management endpoints",
     protected: true,
     adminOnly: true,
   },

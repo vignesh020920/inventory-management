@@ -131,7 +131,7 @@ router.get("/search", searchProducts);
 
 // Protected routes
 router.get("/", protect, getAllProducts);
-router.get("/stats", protect, authorize("admin"), getProductStats);
+router.get("/stats", protect, getProductStats);
 router.get("/:id", protect, getProductById);
 
 // Admin only routes with file upload

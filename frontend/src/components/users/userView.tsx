@@ -12,6 +12,9 @@ import {
   Twitter,
   Linkedin,
   Github,
+  Edit,
+  AlertTriangle,
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,9 +27,10 @@ import { IMAGE_URL } from "@/lib/utils";
 interface UserViewProps {
   user: User | null;
   onClose: () => void;
+  onEdit?: () => void;
 }
 
-export function UserView({ user, onClose }: UserViewProps) {
+export function UserView({ user, onClose, onEdit }: UserViewProps) {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-48 sm:h-64">
@@ -53,7 +57,13 @@ export function UserView({ user, onClose }: UserViewProps) {
     }
   };
 
-  // Helper function to check if profile has any data
+  const getRoleColor = (role: string) => {
+    return role === "admin"
+      ? "bg-gradient-to-r from-purple-500 to-purple-600"
+      : "bg-gradient-to-r from-blue-500 to-blue-600";
+  };
+
+  // Helper functions for profile data
   const hasProfileData = () => {
     const profile = user.profile;
     if (!profile) return false;
@@ -75,7 +85,6 @@ export function UserView({ user, onClose }: UserViewProps) {
     );
   };
 
-  // Helper function to check if address has any data
   const hasAddressData = () => {
     const address = user.profile?.address;
     if (!address) return false;
@@ -89,7 +98,6 @@ export function UserView({ user, onClose }: UserViewProps) {
     );
   };
 
-  // Helper function to check if social links have any data
   const hasSocialLinksData = () => {
     const socialLinks = user.profile?.socialLinks;
     if (!socialLinks) return false;
@@ -104,7 +112,7 @@ export function UserView({ user, onClose }: UserViewProps) {
 
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
-      {/* Header Section - Enhanced for mobile */}
+      {/* Header Section */}
       <Card className="overflow-hidden">
         <CardHeader className="p-3 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -127,7 +135,7 @@ export function UserView({ user, onClose }: UserViewProps) {
                 <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {user.name}
                 </CardTitle>
-                <p className="text-muted-foreground text-sm sm:text-base break-all sm:break-normal">
+                <p className="text-muted-foreground text-sm sm:text-base break-all sm:break-normal mb-2">
                   {user.email}
                 </p>
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 mt-2 sm:mt-3">
@@ -141,11 +149,9 @@ export function UserView({ user, onClose }: UserViewProps) {
                         user.status.slice(1)}
                     </Badge>
                     <Badge
-                      className={`text-xs ${
-                        user.role === "admin"
-                          ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-md"
-                          : "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-md"
-                      }`}
+                      className={`text-xs text-white border-0 shadow-md ${getRoleColor(
+                        user.role
+                      )}`}
                     >
                       <Shield className="h-3 w-3 mr-1" />
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
@@ -165,20 +171,33 @@ export function UserView({ user, onClose }: UserViewProps) {
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              className="self-center sm:self-start hover:bg-red-50 hover:border-red-200 hover:text-red-600"
-            >
-              <X className="h-4 w-4" />
-              <span className="ml-1 sm:hidden">Close</span>
-            </Button>
+            <div className="flex gap-2 self-center sm:self-start">
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onEdit}
+                  className="hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Edit</span>
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+              >
+                <X className="h-4 w-4" />
+                <span className="ml-1 sm:hidden">Close</span>
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>
 
-      {/* Details Section - Responsive Grid */}
+      {/* Details Section */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {/* Basic Information */}
         <Card className="order-1">
@@ -217,11 +236,9 @@ export function UserView({ user, onClose }: UserViewProps) {
               </label>
               <div className="mt-1">
                 <Badge
-                  className={`text-xs sm:text-sm ${
-                    user.role === "admin"
-                      ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-md"
-                      : "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-md"
-                  }`}
+                  className={`text-xs sm:text-sm text-white border-0 shadow-md ${getRoleColor(
+                    user.role
+                  )}`}
                 >
                   <Shield className="h-3 w-3 mr-1" />
                   {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
@@ -260,7 +277,11 @@ export function UserView({ user, onClose }: UserViewProps) {
                       : "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-md"
                   }`}
                 >
-                  <Mail className="h-3 w-3 mr-1" />
+                  {user.isEmailVerified ? (
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                  ) : (
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                  )}
                   {user.isEmailVerified ? "Verified" : "Unverified"}
                 </Badge>
               </div>
@@ -532,7 +553,7 @@ export function UserView({ user, onClose }: UserViewProps) {
         </Card>
       </div>
 
-      {/* Action Buttons - Mobile optimized */}
+      {/* Action Buttons */}
       <Card className="order-5">
         <CardContent className="p-3 sm:pt-6 sm:px-6 sm:pb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
@@ -540,13 +561,21 @@ export function UserView({ user, onClose }: UserViewProps) {
               Account created {format(new Date(user.createdAt), "PPP")}
             </div>
 
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="w-full sm:w-auto hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600"
-            >
-              Close
-            </Button>
+            <div className="flex gap-3 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="flex-1 sm:flex-none hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600"
+              >
+                Close
+              </Button>
+              {onEdit && (
+                <Button onClick={onEdit} className="flex-1 sm:flex-none">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit User
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

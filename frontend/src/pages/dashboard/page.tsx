@@ -19,6 +19,8 @@ import {
   Shield,
   Clock,
   PieChart,
+  Lock,
+  Eye,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useDashboardStore } from "@/stores/dashboardStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useNavigate } from "react-router";
 
 // Enhanced stat card with glass morphism effect
@@ -174,7 +177,6 @@ const MetricCard = ({
 );
 
 // Enhanced detail card with better layout
-// Enhanced detail card with better layout
 const DetailCard = ({
   title,
   icon: Icon,
@@ -219,6 +221,7 @@ const QuickActionCard = ({
   onClick,
   color,
   count,
+  disabled = false,
 }: {
   title: string;
   description: string;
@@ -226,40 +229,102 @@ const QuickActionCard = ({
   onClick: () => void;
   color: string;
   count?: number;
+  disabled?: boolean;
 }) => (
-  <Card className="group relative overflow-hidden cursor-pointer border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-[1.02]">
+  <Card
+    className={`group relative overflow-hidden border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg transition-all duration-500 ${
+      disabled
+        ? "opacity-50 cursor-not-allowed"
+        : "cursor-pointer hover:shadow-xl hover:scale-[1.02]"
+    }`}
+  >
     <div
-      className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+      className={`absolute inset-0 bg-gradient-to-br ${color} ${
+        disabled ? "opacity-0" : "opacity-0 group-hover:opacity-5"
+      } transition-opacity duration-300`}
     ></div>
 
-    <CardContent className="p-6 relative z-10" onClick={onClick}>
+    <CardContent
+      className="p-6 relative z-10"
+      onClick={disabled ? undefined : onClick}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div
-            className={`p-3 rounded-2xl bg-gradient-to-br ${color} bg-opacity-10 group-hover:bg-opacity-20 transition-all duration-300`}
+            className={`p-3 rounded-2xl bg-gradient-to-br ${color} ${
+              disabled
+                ? "bg-opacity-5"
+                : "bg-opacity-10 group-hover:bg-opacity-20"
+            } transition-all duration-300`}
           >
-            <Icon
-              className={`h-6 w-6 ${color
-                .replace("bg-", "text-")
-                .replace("from-", "")
-                .replace(" to-blue-600", "")}`}
-            />
+            {disabled ? (
+              <Lock className={`h-6 w-6 text-gray-400`} />
+            ) : (
+              <Icon
+                className={`h-6 w-6 ${color
+                  .replace("bg-", "text-")
+                  .replace("from-", "")
+                  .replace(" to-blue-600", "")
+                  .replace(" to-purple-600", "")}`}
+              />
+            )}
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            <h3
+              className={`font-bold ${
+                disabled
+                  ? "text-gray-400"
+                  : "text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400"
+              } transition-colors`}
+            >
               {title}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {description}
+              {disabled ? "Admin access required" : description}
             </p>
-            {count !== undefined && (
+            {count !== undefined && !disabled && (
               <Badge variant="secondary" className="mt-1 text-xs">
                 {count} items
               </Badge>
             )}
           </div>
         </div>
-        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+        {disabled ? (
+          <Lock className="h-5 w-5 text-gray-400" />
+        ) : (
+          <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300" />
+        )}
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Restricted access component for user role
+const RestrictedAccessCard = ({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) => (
+  <Card className="border-0 bg-gray-50 dark:bg-gray-800/50 backdrop-blur-sm shadow-lg">
+    <CardContent className="p-8">
+      <div className="text-center space-y-4">
+        <div className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-full inline-block">
+          <Lock className="h-8 w-8 text-gray-400" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            {title}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {description}
+          </p>
+        </div>
+        <Badge variant="outline" className="text-xs">
+          <Shield className="h-3 w-3 mr-1" />
+          Admin Access Required
+        </Badge>
       </div>
     </CardContent>
   </Card>
@@ -276,22 +341,34 @@ export default function Dashboard() {
     clearError,
   } = useDashboardStore();
 
+  const { user, getUserRole } = useAuthStore();
+  const userRole = getUserRole();
+  const isAdmin = userRole === "admin";
+
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Always fetch product stats for both roles
     fetchProductStats();
-    fetchUserStats();
+
+    // Only fetch user stats for admin
+    if (isAdmin) {
+      fetchUserStats();
+    }
+
     setLastUpdated(new Date());
-  }, [fetchProductStats, fetchUserStats]);
+  }, [fetchProductStats, fetchUserStats, isAdmin]);
 
   const handleRefreshAll = () => {
     fetchProductStats();
-    fetchUserStats();
+    if (isAdmin) {
+      fetchUserStats();
+    }
     setLastUpdated(new Date());
   };
 
-  if (loading && !productStats && !userStats) {
+  if (loading && !productStats && !userStats && isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -314,6 +391,23 @@ export default function Dashboard() {
     );
   }
 
+  // Function to get dashboard title based on role
+  const getDashboardTitle = () => {
+    if (isAdmin) {
+      return {
+        title: "Admin Dashboard",
+        subtitle:
+          "Complete overview of your business performance and user management",
+      };
+    }
+    return {
+      title: "Dashboard",
+      subtitle: "Your product catalog insights and analytics",
+    };
+  };
+
+  const dashboardInfo = getDashboardTitle();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="max-w-7xl mx-auto p-4 space-y-8">
@@ -331,9 +425,17 @@ export default function Dashboard() {
                     <BarChart3 className="h-8 w-8 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h1 className="text-4xl font-bold">
+                        {dashboardInfo.title}
+                      </h1>
+                      <Badge className="bg-white/20 text-white border-white/30 text-sm px-3 py-1">
+                        <Shield className="h-3 w-3 mr-1" />
+                        {isAdmin ? "Admin" : "User"}
+                      </Badge>
+                    </div>
                     <p className="text-white/90 text-lg">
-                      Real-time insights into your business performance
+                      {dashboardInfo.subtitle}
                     </p>
                   </div>
                 </div>
@@ -395,8 +497,13 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Enhanced Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Enhanced Key Metrics - Conditional based on role */}
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 ${
+            isAdmin ? "lg:grid-cols-4" : "lg:grid-cols-2"
+          } gap-6`}
+        >
+          {/* Product Stats - Available for both admin and user */}
           {productStats && (
             <>
               <StatCard
@@ -424,7 +531,9 @@ export default function Dashboard() {
               />
             </>
           )}
-          {userStats && (
+
+          {/* User Stats - Only available for admin */}
+          {isAdmin && userStats && (
             <>
               <StatCard
                 title="Total Users"
@@ -452,9 +561,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Enhanced Summary Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Product Overview */}
+        {/* Enhanced Summary Cards - Conditional based on role */}
+        <div
+          className={`grid grid-cols-1 ${
+            isAdmin ? "lg:grid-cols-2" : "lg:grid-cols-1"
+          } gap-8`}
+        >
+          {/* Product Overview - Available for both roles */}
           {productStats && (
             <MetricCard
               title="Product Analytics"
@@ -493,8 +606,8 @@ export default function Dashboard() {
             />
           )}
 
-          {/* User Overview */}
-          {userStats && (
+          {/* User Overview - Only for admin */}
+          {isAdmin && userStats && (
             <MetricCard
               title="User Analytics"
               bgClass="bg-gradient-to-br from-purple-600 to-purple-700"
@@ -530,11 +643,23 @@ export default function Dashboard() {
               ]}
             />
           )}
+
+          {/* Restricted Access Message for User Role */}
+          {!isAdmin && (
+            <RestrictedAccessCard
+              title="User Analytics"
+              description="User management and analytics are available to administrators only."
+            />
+          )}
         </div>
 
-        {/* Enhanced Detail Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Product Health */}
+        {/* Enhanced Detail Cards - Conditional based on role */}
+        <div
+          className={`grid grid-cols-1 ${
+            isAdmin ? "lg:grid-cols-2" : "lg:grid-cols-1"
+          } gap-6`}
+        >
+          {/* Product Health - Available for both roles */}
           {productStats && (
             <DetailCard
               title="Product Health"
@@ -616,8 +741,8 @@ export default function Dashboard() {
             </DetailCard>
           )}
 
-          {/* User Engagement */}
-          {userStats && (
+          {/* User Engagement - Only for admin */}
+          {isAdmin && userStats && (
             <DetailCard
               title="User Engagement"
               icon={Activity}
@@ -671,11 +796,24 @@ export default function Dashboard() {
               </div>
             </DetailCard>
           )}
+
+          {/* Restricted Access for User Role */}
+          {!isAdmin && (
+            <RestrictedAccessCard
+              title="User Engagement"
+              description="User engagement metrics and analytics are available to administrators only."
+            />
+          )}
         </div>
 
-        {/* Enhanced Quick Actions */}
+        {/* Enhanced Quick Actions - Conditional based on role */}
         <DetailCard title="Quick Actions" icon={Zap} accentColor="emerald">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div
+            className={`grid grid-cols-1 ${
+              isAdmin ? "md:grid-cols-2" : "md:grid-cols-1"
+            } gap-6`}
+          >
+            {/* Product Management - Available for both roles */}
             <QuickActionCard
               title="Manage Products"
               description="View and edit your product catalog"
@@ -684,14 +822,27 @@ export default function Dashboard() {
               count={productStats?.totalProducts}
               onClick={() => navigate("/products")}
             />
-            <QuickActionCard
-              title="User Management"
-              description="Manage user accounts and permissions"
-              icon={Users}
-              color="from-purple-500 to-purple-600"
-              count={userStats?.totalUsers}
-              onClick={() => navigate("/users")}
-            />
+
+            {/* User Management - Admin only */}
+            {isAdmin ? (
+              <QuickActionCard
+                title="User Management"
+                description="Manage user accounts and permissions"
+                icon={Users}
+                color="from-purple-500 to-purple-600"
+                count={userStats?.totalUsers}
+                onClick={() => navigate("/users")}
+              />
+            ) : (
+              <QuickActionCard
+                title="User Management"
+                description="Manage user accounts and permissions"
+                icon={Users}
+                color="from-gray-400 to-gray-500"
+                onClick={() => {}}
+                disabled={true}
+              />
+            )}
           </div>
         </DetailCard>
       </div>

@@ -60,7 +60,7 @@ const AppRouter: React.FC = () => {
 
   // Get user role with proper typing and memoization
   const userRole: UserRole = useMemo(() => {
-    if (!isAuthenticated || !user) return "guest";
+    if (!isAuthenticated || !user) return "user";
     return getUserRole();
   }, [user, isAuthenticated, getUserRole]);
 

@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import authService from "../services/authService";
 
-export type UserRole = "admin" | "user" | "manager" | "guest";
+export type UserRole = "admin" | "user";
 
 export interface User {
   id: string;
@@ -101,7 +101,7 @@ export const useAuthStore = create<AuthState>()(
 
       getUserRole: (): UserRole => {
         const { user, isAuthenticated } = get();
-        if (!isAuthenticated || !user) return "guest";
+        if (!isAuthenticated || !user) return "user";
         return user.role || "user";
       },
 
