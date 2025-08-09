@@ -61,7 +61,7 @@ import {
   type PasswordFormData,
   type ProfileFormData,
 } from "@/schemas/adminSettingsSchema";
-import { IMAGE_URL } from "@/lib/utils";
+// import { IMAGE_URL } from "@/lib/utils";
 import usePasswordVisibility from "@/hooks/usePasswordVisibility";
 
 export default function AdminAccountSettings() {
@@ -303,8 +303,14 @@ export default function AdminAccountSettings() {
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
               <div className="relative flex-shrink-0">
                 <Avatar className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 shadow-lg ring-4 ring-blue-100 dark:ring-blue-900">
-                  <AvatarImage
+                  {/* <AvatarImage
                     src={`${IMAGE_URL}${currentAdmin.avatar}` || undefined}
+                    alt={currentAdmin.name}
+                    crossOrigin="anonymous"
+                    className="object-cover"
+                  /> */}
+                  <AvatarImage
+                    src={currentAdmin.avatar || undefined}
                     alt={currentAdmin.name}
                     crossOrigin="anonymous"
                     className="object-cover"

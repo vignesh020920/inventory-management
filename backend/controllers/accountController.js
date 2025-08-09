@@ -2,8 +2,11 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const httpStatus = require("http-status");
-const path = require("path");
-const fs = require("fs").promises;
+const {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  extractPublicId,
+} = require("../utils/cloudinaryHelper");
 
 // @desc    Get current admin profile
 // @route   GET /api/admin/account/profile
@@ -207,9 +210,7 @@ const changePassword = async (req, res) => {
   }
 };
 
-// @desc    Upload admin avatar
-// @route   POST /api/admin/account/avatar
-// @access  Private/Admin
+// Upload avatar
 const uploadAvatar = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -221,52 +222,54 @@ const uploadAvatar = async (req, res) => {
       });
     }
 
-    // Get current user to check for existing avatar
     const user = await User.findById(userId);
     if (!user) {
-      // Delete uploaded file if user not found
-      await fs.unlink(req.file.path).catch(console.error);
       return res.status(httpStatus.NOT_FOUND).json({
         success: false,
         message: "User not found",
       });
     }
 
-    // Delete old avatar if exists
-    if (user.avatar) {
-      const oldAvatarPath = path.join(
-        __dirname,
-        "../uploads/avatars",
-        path.basename(user.avatar)
-      );
-      await fs.unlink(oldAvatarPath).catch((err) => {
-        console.error("Error deleting old avatar:", err);
+    try {
+      // Upload to Cloudinary
+      const uploadResult = await uploadToCloudinary(req.file.buffer, {
+        folder: "uploads/avatars",
+        transformation: [
+          { width: 500, height: 500, crop: "limit" },
+          { quality: "auto", fetch_format: "auto" },
+        ],
+      });
+
+      // Delete old avatar if exists
+      if (user.avatar) {
+        const oldPublicId = extractPublicId(user.avatar);
+        if (oldPublicId) {
+          await deleteFromCloudinary(oldPublicId).catch(console.error);
+        }
+      }
+
+      // Update user
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { avatar: uploadResult.secure_url },
+        { new: true }
+      ).select("-password");
+
+      res.status(httpStatus.OK).json({
+        success: true,
+        message: "Avatar uploaded successfully",
+        data: { avatar: uploadResult.secure_url },
+      });
+    } catch (uploadError) {
+      console.error("Cloudinary upload error:", uploadError);
+      res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: "Failed to upload avatar to cloud",
+        error: uploadError.message,
       });
     }
-
-    // Create avatar URL - using your multer configuration
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-
-    // Update user with new avatar
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { avatar: avatarUrl },
-      { new: true }
-    ).select("-password");
-
-    res.status(httpStatus.OK).json({
-      success: true,
-      message: "Avatar uploaded successfully",
-      data: { avatar: avatarUrl },
-    });
   } catch (error) {
     console.error("Upload avatar error:", error);
-
-    // Clean up uploaded file on error
-    if (req.file) {
-      await fs.unlink(req.file.path).catch(console.error);
-    }
-
     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Failed to upload avatar",
@@ -275,14 +278,11 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
-// @desc    Remove admin avatar
-// @route   DELETE /api/admin/account/avatar
-// @access  Private/Admin
+// Remove avatar
 const removeAvatar = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get current user
     const user = await User.findById(userId);
     if (!user) {
       return res.status(httpStatus.NOT_FOUND).json({
@@ -298,14 +298,13 @@ const removeAvatar = async (req, res) => {
       });
     }
 
-    // Delete avatar file - extract filename from URL
-    const filename = path.basename(user.avatar);
-    const avatarPath = path.join(__dirname, "../uploads/avatars", filename);
-    await fs.unlink(avatarPath).catch((err) => {
-      console.error("Error deleting avatar file:", err);
-    });
+    // Delete from Cloudinary
+    const publicId = extractPublicId(user.avatar);
+    if (publicId) {
+      await deleteFromCloudinary(publicId).catch(console.error);
+    }
 
-    // Update user to remove avatar
+    // Update user
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $unset: { avatar: 1 } },
@@ -326,6 +325,126 @@ const removeAvatar = async (req, res) => {
     });
   }
 };
+
+// // @desc    Upload admin avatar
+// // @route   POST /api/admin/account/avatar
+// // @access  Private/Admin
+// const uploadAvatar = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+
+//     if (!req.file) {
+//       return res.status(httpStatus.BAD_REQUEST).json({
+//         success: false,
+//         message: "Please provide an image file",
+//       });
+//     }
+
+//     // Get current user to check for existing avatar
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       // Delete uploaded file if user not found
+//       await fs.unlink(req.file.path).catch(console.error);
+//       return res.status(httpStatus.NOT_FOUND).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+
+//     // Delete old avatar if exists
+//     if (user.avatar) {
+//       const oldAvatarPath = path.join(
+//         __dirname,
+//         "../uploads/avatars",
+//         path.basename(user.avatar)
+//       );
+//       await fs.unlink(oldAvatarPath).catch((err) => {
+//         console.error("Error deleting old avatar:", err);
+//       });
+//     }
+
+//     // Create avatar URL - using your multer configuration
+//     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+//     // Update user with new avatar
+//     const updatedUser = await User.findByIdAndUpdate(
+//       userId,
+//       { avatar: avatarUrl },
+//       { new: true }
+//     ).select("-password");
+
+//     res.status(httpStatus.OK).json({
+//       success: true,
+//       message: "Avatar uploaded successfully",
+//       data: { avatar: avatarUrl },
+//     });
+//   } catch (error) {
+//     console.error("Upload avatar error:", error);
+
+//     // Clean up uploaded file on error
+//     if (req.file) {
+//       await fs.unlink(req.file.path).catch(console.error);
+//     }
+
+//     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+//       success: false,
+//       message: "Failed to upload avatar",
+//       error: error.message,
+//     });
+//   }
+// };
+
+// // @desc    Remove admin avatar
+// // @route   DELETE /api/admin/account/avatar
+// // @access  Private/Admin
+// const removeAvatar = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+
+//     // Get current user
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.status(httpStatus.NOT_FOUND).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+
+//     if (!user.avatar) {
+//       return res.status(httpStatus.BAD_REQUEST).json({
+//         success: false,
+//         message: "No avatar to remove",
+//       });
+//     }
+
+//     // Delete avatar file - extract filename from URL
+//     const filename = path.basename(user.avatar);
+//     const avatarPath = path.join(__dirname, "../uploads/avatars", filename);
+//     await fs.unlink(avatarPath).catch((err) => {
+//       console.error("Error deleting avatar file:", err);
+//     });
+
+//     // Update user to remove avatar
+//     const updatedUser = await User.findByIdAndUpdate(
+//       userId,
+//       { $unset: { avatar: 1 } },
+//       { new: true }
+//     ).select("-password");
+
+//     res.status(httpStatus.OK).json({
+//       success: true,
+//       message: "Avatar removed successfully",
+//       data: { user: updatedUser },
+//     });
+//   } catch (error) {
+//     console.error("Remove avatar error:", error);
+//     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+//       success: false,
+//       message: "Failed to remove avatar",
+//       error: error.message,
+//     });
+//   }
+// };
 
 // @desc    Get admin account statistics (optional)
 // @route   GET /api/admin/account/stats

@@ -28,7 +28,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useProductStore } from "@/stores/productStore";
 import { Badge } from "../ui/badge";
 import { Label } from "@/components/ui/label";
-import { IMAGE_URL } from "@/lib/utils";
+// import { IMAGE_URL } from "@/lib/utils";
 import {
   productFormSchema,
   type ProductFormValues,
@@ -92,7 +92,158 @@ export function ProductForm({
     }
   }, [productError, clearProductError]);
 
-  // File upload handler
+  // // File upload handler
+  // const handleFileUpload = async (file: File, index: number) => {
+  //   if (!file) return;
+
+  //   // Validate file type
+  //   if (!file.type.startsWith("image/")) {
+  //     alert("Please select an image file");
+  //     return;
+  //   }
+
+  //   // Validate file size (5MB max)
+  //   if (file.size > 5 * 1024 * 1024) {
+  //     alert("Image size should be less than 5MB");
+  //     return;
+  //   }
+
+  //   setUploadingImages((prev) => [...prev, index]);
+
+  //   try {
+  //     // Create preview URL
+  //     const previewUrl = URL.createObjectURL(file);
+
+  //     // Update the image field with file and preview
+  //     const currentImage = imageFields[index] || {};
+  //     updateImage(index, {
+  //       ...currentImage,
+  //       file: file, // Ensure this is the actual File object
+  //       preview: previewUrl,
+  //       url: previewUrl, // For consistency with form data structure
+  //       alt: currentImage.alt || file.name.split(".")[0], // Use filename without extension as default alt
+  //     });
+
+  //     console.log(`File uploaded at index ${index}:`, {
+  //       name: file.name,
+  //       size: file.size,
+  //       type: file.type,
+  //       isFile: file instanceof File,
+  //     });
+  //   } catch (error) {
+  //     console.error("File upload error:", error);
+  //     alert("Failed to upload image");
+  //   } finally {
+  //     setUploadingImages((prev) => prev.filter((i) => i !== index));
+  //   }
+  // };
+
+  // // In your ProductForm component's handleSubmit function
+  // const handleSubmit = async (data: ProductFormValues) => {
+  //   try {
+  //     clearProductError();
+
+  //     // Prepare form data for submission including files
+  //     const formData = new FormData();
+
+  //     // Add text fields
+  //     formData.append("name", data.name);
+  //     formData.append("stockQuantity", data.stockQuantity.toString());
+  //     if (data.description) formData.append("description", data.description);
+  //     // Add tags
+  //     if (data.tags && data.tags.length > 0) {
+  //       formData.append("tags", JSON.stringify(data.tags));
+  //     }
+
+  //     // Process images
+  //     const imageAlts: string[] = [];
+  //     const existingImages: any[] = [];
+  //     let newFileCount = 0;
+
+  //     data.images?.forEach((image, index) => {
+  //       console.log(`Image ${index}:`, {
+  //         hasFile: !!image.file,
+  //         hasUrl: !!image.url,
+  //         isFileInstance: image.file instanceof File,
+  //         alt: image.alt,
+  //       });
+
+  //       if (image.file && image.file instanceof File) {
+  //         // New uploaded file - ensure it's a valid File object
+  //         console.log(`Adding new file ${newFileCount}:`, image.file.name);
+  //         formData.append("images", image.file);
+  //         imageAlts.push(image.alt || "");
+  //         newFileCount++;
+  //       } else if (image.url && mode === "edit") {
+  //         // Existing image in edit mode
+  //         console.log(`Preserving existing image:`, image.url);
+  //         existingImages.push({
+  //           url: image.url,
+  //           alt: image.alt || "",
+  //         });
+  //       }
+  //     });
+
+  //     // Add image alt texts for new files
+  //     imageAlts.forEach((alt) => {
+  //       formData.append("imageAlts", alt);
+  //     });
+
+  //     // Add existing images for edit mode
+  //     if (mode === "edit" && existingImages.length > 0) {
+  //       existingImages.forEach((img) => {
+  //         formData.append("existingImages", JSON.stringify(img));
+  //       });
+  //     }
+
+  //     for (let [key, value] of formData.entries()) {
+  //       if (value instanceof File) {
+  //         console.log(key, `File: ${value.name} (${value.size} bytes)`);
+  //       } else {
+  //         console.log(key, value);
+  //       }
+  //     }
+
+  //     if (mode === "create") {
+  //       console.log("Creating product with FormData...");
+  //       await createProduct(formData);
+  //     } else if (mode === "edit" && productId) {
+  //       console.log("Updating product with FormData...");
+  //       await updateProduct(productId, formData);
+  //     }
+
+  //     // Show success message
+  //     setShowSuccess(true);
+  //     setTimeout(() => setShowSuccess(false), 3000);
+
+  //     // Reset form for create mode
+  //     if (mode === "create") {
+  //       clearForm();
+  //       // Clean up preview URLs to prevent memory leaks
+  //       data.images?.forEach((image) => {
+  //         if (image.preview && image.preview.startsWith("blob:")) {
+  //           URL.revokeObjectURL(image.preview);
+  //         }
+  //       });
+  //     }
+
+  //     // Call success callback
+  //     onSuccess?.();
+  //   } catch (error) {
+  //     console.error("Form submission error:", error);
+
+  //     // Clean up preview URLs on error as well
+  //     data.images?.forEach((image) => {
+  //       if (image.preview && image.preview.startsWith("blob:")) {
+  //         URL.revokeObjectURL(image.preview);
+  //       }
+  //     });
+  //   }
+  // };
+
+  // components/forms/product-form.tsx - Key sections updated
+
+  // File upload handler - UPDATED
   const handleFileUpload = async (file: File, index: number) => {
     if (!file) return;
 
@@ -108,6 +259,12 @@ export function ProductForm({
       return;
     }
 
+    // Validate file is not empty
+    if (file.size === 0) {
+      alert("Selected file is empty. Please choose a valid image.");
+      return;
+    }
+
     setUploadingImages((prev) => [...prev, index]);
 
     try {
@@ -118,10 +275,10 @@ export function ProductForm({
       const currentImage = imageFields[index] || {};
       updateImage(index, {
         ...currentImage,
-        file: file, // Ensure this is the actual File object
+        file: file, // Keep original File object
         preview: previewUrl,
-        url: previewUrl, // For consistency with form data structure
-        alt: currentImage.alt || file.name.split(".")[0], // Use filename without extension as default alt
+        url: "", // Clear any existing URL for new uploads
+        alt: currentImage.alt || file.name.split(".")[0],
       });
 
       console.log(`File uploaded at index ${index}:`, {
@@ -129,16 +286,17 @@ export function ProductForm({
         size: file.size,
         type: file.type,
         isFile: file instanceof File,
+        hasBuffer: file.size > 0, // Verify file has content
       });
     } catch (error) {
       console.error("File upload error:", error);
-      alert("Failed to upload image");
+      alert("Failed to process image file");
     } finally {
       setUploadingImages((prev) => prev.filter((i) => i !== index));
     }
   };
 
-  // In your ProductForm component's handleSubmit function
+  // Updated handleSubmit function - ENHANCED VALIDATION
   const handleSubmit = async (data: ProductFormValues) => {
     try {
       clearProductError();
@@ -150,30 +308,54 @@ export function ProductForm({
       formData.append("name", data.name);
       formData.append("stockQuantity", data.stockQuantity.toString());
       if (data.description) formData.append("description", data.description);
+
       // Add tags
       if (data.tags && data.tags.length > 0) {
         formData.append("tags", JSON.stringify(data.tags));
       }
 
-      // Process images
+      // Process images with enhanced validation
       const imageAlts: string[] = [];
       const existingImages: any[] = [];
       let newFileCount = 0;
+      let hasValidFiles = false;
 
       data.images?.forEach((image, index) => {
-        console.log(`Image ${index}:`, {
+        console.log(`Processing image ${index}:`, {
           hasFile: !!image.file,
           hasUrl: !!image.url,
           isFileInstance: image.file instanceof File,
+          fileSize: image.file?.size || 0,
+          fileName: image.file?.name || "N/A",
           alt: image.alt,
         });
 
         if (image.file && image.file instanceof File) {
+          // Additional validation for File object
+          if (image.file.size === 0) {
+            console.error(`File at index ${index} is empty:`, image.file.name);
+            throw new Error(`Image "${image.file.name}" is empty or corrupted`);
+          }
+
+          if (!image.file.type.startsWith("image/")) {
+            console.error(
+              `File at index ${index} is not an image:`,
+              image.file.type
+            );
+            throw new Error(`File "${image.file.name}" is not a valid image`);
+          }
+
           // New uploaded file - ensure it's a valid File object
-          console.log(`Adding new file ${newFileCount}:`, image.file.name);
+          console.log(`Adding new file ${newFileCount}:`, {
+            name: image.file.name,
+            size: image.file.size,
+            type: image.file.type,
+          });
+
           formData.append("images", image.file);
           imageAlts.push(image.alt || "");
           newFileCount++;
+          hasValidFiles = true;
         } else if (image.url && mode === "edit") {
           // Existing image in edit mode
           console.log(`Preserving existing image:`, image.url);
@@ -183,6 +365,12 @@ export function ProductForm({
           });
         }
       });
+
+      // Validate we have at least some content for new products
+      if (mode === "create" && !hasValidFiles) {
+        alert("Please add at least one valid image for the product");
+        return;
+      }
 
       // Add image alt texts for new files
       imageAlts.forEach((alt) => {
@@ -196,13 +384,22 @@ export function ProductForm({
         });
       }
 
+      // Debug FormData contents
+      console.log("=== FRONTEND FORMDATA DEBUG ===");
+      let totalFiles = 0;
       for (let [key, value] of formData.entries()) {
         if (value instanceof File) {
-          console.log(key, `File: ${value.name} (${value.size} bytes)`);
+          console.log(
+            key,
+            `File: ${value.name} (${value.size} bytes, ${value.type})`
+          );
+          totalFiles++;
         } else {
           console.log(key, value);
         }
       }
+      console.log(`Total files to upload: ${totalFiles}`);
+      console.log("=== END FRONTEND DEBUG ===");
 
       if (mode === "create") {
         console.log("Creating product with FormData...");
@@ -219,12 +416,6 @@ export function ProductForm({
       // Reset form for create mode
       if (mode === "create") {
         clearForm();
-        // Clean up preview URLs to prevent memory leaks
-        data.images?.forEach((image) => {
-          if (image.preview && image.preview.startsWith("blob:")) {
-            URL.revokeObjectURL(image.preview);
-          }
-        });
       }
 
       // Call success callback
@@ -232,7 +423,12 @@ export function ProductForm({
     } catch (error) {
       console.error("Form submission error:", error);
 
-      // Clean up preview URLs on error as well
+      // Show user-friendly error
+      if (error instanceof Error) {
+        alert(error.message);
+      }
+
+      // Clean up preview URLs on error
       data.images?.forEach((image) => {
         if (image.preview && image.preview.startsWith("blob:")) {
           URL.revokeObjectURL(image.preview);
@@ -468,6 +664,20 @@ export function ProductForm({
                     <div>
                       <Label htmlFor={`image-${index}`}>Select Image</Label>
                       <div className="mt-2 flex items-center gap-4">
+                        {/* <Input
+                          id={`image-${index}`}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleFileUpload(file, index);
+                            }
+                          }}
+                          className="cursor-pointer"
+                          disabled={uploadingImages.includes(index)}
+                        /> */}
+
                         <Input
                           id={`image-${index}`}
                           type="file"
@@ -475,6 +685,30 @@ export function ProductForm({
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
+                              // Immediate validation before processing
+                              if (file.size === 0) {
+                                alert(
+                                  `File "${file.name}" is empty. Please select a valid image.`
+                                );
+                                e.target.value = ""; // Clear the input
+                                return;
+                              }
+
+                              if (file.size > 5 * 1024 * 1024) {
+                                alert(
+                                  `File "${file.name}" is too large. Maximum size is 5MB.`
+                                );
+                                e.target.value = ""; // Clear the input
+                                return;
+                              }
+
+                              console.log("File selected:", {
+                                name: file.name,
+                                size: file.size,
+                                type: file.type,
+                                lastModified: file.lastModified,
+                              });
+
                               handleFileUpload(file, index);
                             }
                           }}
@@ -491,7 +725,8 @@ export function ProductForm({
                     {(field.preview || field.url) && (
                       <div className="mt-2">
                         <img
-                          src={field.preview || `${IMAGE_URL}${field.url}`}
+                          // src={field.preview || `${IMAGE_URL}${field.url}`}
+                          src={field.preview || field.url}
                           alt={field.alt || "Product image"}
                           className="w-32 h-32 object-cover rounded-md border"
                         />

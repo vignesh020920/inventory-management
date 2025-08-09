@@ -13,9 +13,8 @@ const {
 } = require("../controllers/productController");
 
 // Import middleware
-const { protect, authorize } = require("../middleware/auth");
-const { validate } = require("../middleware/validation");
-const { productUpload } = require("../middleware/upload"); // Only import productUpload
+const { protect } = require("../middleware/auth");
+const { productUpload } = require("../middleware/cloudinaryUpload"); // Only import productUpload
 
 // Import validation schemas
 const {

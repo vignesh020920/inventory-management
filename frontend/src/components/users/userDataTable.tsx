@@ -83,7 +83,7 @@ import {
 import { useUserStore } from "@/stores/userStore";
 import { UserModal } from "@/components/modal/user-modal";
 import { type User } from "@/types/user";
-import { IMAGE_URL } from "@/lib/utils";
+// import { IMAGE_URL } from "@/lib/utils";
 
 // Fix TypeScript error by properly typing rowSelection
 type RowSelection = Record<string, boolean>;
@@ -295,7 +295,8 @@ const UserCard = ({
           >
             <Avatar className="h-12 w-12 bg-white">
               <AvatarImage
-                src={`${IMAGE_URL}${user.avatar}` || undefined}
+                // src={`${IMAGE_URL}${user.avatar}` || undefined}
+                src={user.avatar || undefined}
                 alt={user.name}
                 className="object-cover"
               />
@@ -467,7 +468,9 @@ export default function UserDataTable() {
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("view");
+  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">(
+    "view"
+  );
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // Delete confirmation states
@@ -737,7 +740,8 @@ export default function UserDataTable() {
             >
               <Avatar className="h-10 w-10 bg-white">
                 <AvatarImage
-                  src={`${IMAGE_URL}${user.avatar}` || undefined}
+                  // src={`${IMAGE_URL}${user.avatar}` || undefined}
+                  src={user.avatar || undefined}
                   alt={user.name}
                 />
                 <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 font-semibold">

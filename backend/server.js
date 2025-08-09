@@ -10,13 +10,16 @@ const path = require("path");
 const loadEnv = require("./utils/envConfig");
 loadEnv();
 
+// Import and configure Cloudinary
+const { configureCloudinary } = require("./config/cloudinary");
+
 //import centralized routes
 const apiRoutes = require("./routes");
 
 // Import middleware
 const { errorHandler } = require("./middleware/errorHandler");
 const { connectDB } = require("./config/database");
-const { setupSocket } = require("./config/socket");
+// const { setupSocket } = require("./config/socket");
 
 const app = express();
 const server = createServer(app);
@@ -30,6 +33,9 @@ const io = new Server(server, {
 // Connect to database
 connectDB();
 
+// Initialize Cloudinary BEFORE using any routes
+configureCloudinary();
+
 // CORS - Move this before helmet for better compatibility
 app.use(
   cors({
@@ -38,7 +44,7 @@ app.use(
   })
 );
 
-// Security middleware - Updated helmet configuration to fix image loading
+// Security middleware - Updated helmet configuration for Cloudinary images
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false, // Allow cross-origin embedding
@@ -50,6 +56,8 @@ app.use(
           "'self'",
           "data:",
           "blob:",
+          "https://res.cloudinary.com", // Allow Cloudinary images
+          "https://cloudinary.com",
           process.env.CORS_ORIGIN || "http://localhost:5173",
           process.env.BACKEND_URL || "http://localhost:5000", // Your backend URL
         ],
@@ -87,6 +95,8 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("combined"));
 }
 
+// Static files middleware (Keep for backward compatibility or any remaining local files)
+// Note: With Cloudinary, you might not need this anymore, but keeping for transition period
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -171,6 +181,7 @@ server.listen(PORT, () => {
   console.log(
     `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
   );
+  console.log(`📁 Cloudinary integration active`);
 });
 
 // Handle unhandled promise rejections

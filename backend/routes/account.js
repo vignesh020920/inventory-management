@@ -4,8 +4,8 @@ const router = express.Router();
 
 // Import middleware with error checking
 const authMiddleware = require("../middleware/auth");
-const { protect, adminOnly } = authMiddleware;
-const { avatarUpload } = require("../middleware/upload");
+const { protect } = authMiddleware;
+const { avatarUpload } = require("../middleware/cloudinaryUpload");
 
 // Import controllers
 const {

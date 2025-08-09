@@ -22,7 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { type User } from "@/types/user";
-import { IMAGE_URL } from "@/lib/utils";
+// import { IMAGE_URL } from "@/lib/utils";
 
 interface UserViewProps {
   user: User | null;
@@ -119,7 +119,8 @@ export function UserView({ user, onClose, onEdit }: UserViewProps) {
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 text-center sm:text-left">
               <Avatar className="h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0">
                 <AvatarImage
-                  src={`${IMAGE_URL}${user.avatar}` || undefined}
+                  // src={`${IMAGE_URL}${user.avatar}` || undefined}
+                  src={user.avatar || undefined}
                   alt={user.name}
                   className="object-cover"
                 />

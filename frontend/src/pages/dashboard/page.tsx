@@ -394,7 +394,7 @@ export default function Dashboard() {
   const getDashboardTitle = () => {
     if (isAdmin) {
       return {
-        title: "Admin Dashboard",
+        title: "Dashboard",
         subtitle:
           "Complete overview of your business performance and user management",
       };
@@ -428,7 +428,8 @@ export default function Dashboard() {
                       <h1 className="text-4xl font-bold">
                         {dashboardInfo.title}
                       </h1>
-                      <Badge className="bg-white/20 text-white border-white/30 text-sm px-3 py-1">
+
+                      <Badge className="hidden sm:flex bg-white/20 text-white border-white/30 text-sm px-3 py-1">
                         <Shield className="h-3 w-3 mr-1" />
                         {isAdmin ? "Admin" : "User"}
                       </Badge>
@@ -441,8 +442,11 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
                     <Clock className="h-4 w-4" />
-                    <span>
+                    <span className="hidden sm:inline">
                       Last updated: {lastUpdated.toLocaleTimeString()}
+                    </span>
+                    <span className="sm:hidden">
+                      {lastUpdated.toLocaleTimeString()}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">

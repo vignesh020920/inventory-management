@@ -56,7 +56,7 @@ import { useProductStore } from "@/stores/productStore";
 import { ProductModal } from "@/components/modal/product-modal";
 import { type Product } from "@/types/product";
 import { productToFormData } from "@/utils/productUtils";
-import { IMAGE_URL } from "@/lib/utils";
+// import { IMAGE_URL } from "@/lib/utils";
 
 // Enhanced Stock status badge component with more colors
 const StockBadge = ({ product }: { product: Product }) => {
@@ -319,30 +319,43 @@ const ProductCard = ({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="h-8 w-8 p-0 bg-white/90 backdrop-blur-md shadow-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                className="h-8 w-8 p-0 bg-background/90 backdrop-blur-md shadow-lg border border-border hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200"
               >
-                <MoreHorizontal className="h-4 w-4 text-gray-600" />
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="bg-white/95 backdrop-blur-md border border-gray-200 shadow-xl"
+              className="bg-background/95 backdrop-blur-md border border-border shadow-xl"
             >
-              <DropdownMenuLabel className="text-gray-700">
+              <DropdownMenuLabel className="text-foreground">
                 Actions
               </DropdownMenuLabel>
-              <DropdownMenuItem onClick={onView} className="hover:bg-blue-50">
-                <Eye className="mr-2 h-4 w-4 text-blue-500" />
-                View Details
+
+              {/* View Details */}
+              <DropdownMenuItem
+                onClick={onView}
+                className="hover:bg-blue-50 dark:hover:bg-blue-950/50 focus:bg-blue-50 dark:focus:bg-blue-950/50"
+              >
+                <Eye className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-foreground">View Details</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onEdit} className="hover:bg-green-50">
-                <Edit className="mr-2 h-4 w-4 text-green-500" />
-                Edit Product
+
+              {/* Edit Product */}
+              <DropdownMenuItem
+                onClick={onEdit}
+                className="hover:bg-emerald-50 dark:hover:bg-emerald-950/50 focus:bg-emerald-50 dark:focus:bg-emerald-950/50"
+              >
+                <Edit className="mr-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-foreground">Edit Product</span>
               </DropdownMenuItem>
+
               <DropdownMenuSeparator />
+
+              {/* Delete Product */}
               <DropdownMenuItem
                 onClick={onDelete}
-                className="text-red-600 hover:bg-red-50"
+                className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 focus:bg-red-50 dark:focus:bg-red-950/50"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Product
@@ -358,8 +371,13 @@ const ProductCard = ({
               className={`p-1 rounded-full bg-gradient-to-br ${cardGradient} shadow-lg`}
             >
               <Avatar className="h-20 w-20 sm:h-24 sm:w-24 bg-white">
-                <AvatarImage
+                {/* <AvatarImage
                   src={`${IMAGE_URL}${firstImage?.url}`}
+                  alt={firstImage?.alt || product.name}
+                  className="object-cover"
+                /> */}
+                <AvatarImage
+                  src={firstImage?.url}
                   alt={firstImage?.alt || product.name}
                   className="object-cover"
                 />

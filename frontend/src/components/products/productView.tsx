@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { type Product } from "@/types/product";
-import { IMAGE_URL } from "@/lib/utils";
+// import { IMAGE_URL } from "@/lib/utils";
 
 interface ProductViewProps {
   product: Product | null;
@@ -127,7 +127,8 @@ export function ProductView({ product, onClose, onEdit }: ProductViewProps) {
                   className="aspect-square bg-muted rounded-lg overflow-hidden group cursor-pointer"
                 >
                   <img
-                    src={`${IMAGE_URL}${image.url}`}
+                    // src={`${IMAGE_URL}${image.url}`}
+                    src={image.url}
                     alt={image.alt || `Product image ${index + 1}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                   />

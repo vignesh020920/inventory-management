@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuthStore, type UserRole } from "@/stores/authStore"; // Import UserRole from authStore
 import { Link } from "react-router";
-import { IMAGE_URL } from "@/lib/utils";
+// import { IMAGE_URL } from "@/lib/utils";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useAuthStore((state) => state.user);
@@ -89,7 +89,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     user: {
       name: user?.name || "Kaisar",
       email: user?.email || "Kaisar@example.com",
-      avatar: `${IMAGE_URL}${user?.avatar}` || "",
+      // avatar: `${IMAGE_URL}${user?.avatar}` || "",
+      avatar: user?.avatar || "",
     },
     navMain: getNavMenuForRole(user?.role),
   };
